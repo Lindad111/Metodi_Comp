@@ -1,0 +1,102 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+m1 = 0.1
+m2 = 0.75
+V0 = 20
+R = 0.3
+vf = 2.353
+g = 0
+
+#Funzioni Lineari a e b
+Ft = np.linspace(0, 2.1, 1000)
+
+def V1x(x):
+    return V0 - x/m1
+V1x = V1x(Ft)
+
+def v2(x):
+    return x/m2
+V2 = v2(Ft)
+
+
+#Funzioni d e d'
+def V2x(x, y):
+    return y*np.cos(x)        #Continua dopo perchè mi servono teta e V2 dall'eq. diff
+
+
+#Runge-Kutta per c e c'
+def f(x,v,F) :
+    return (((F*np.cos(x))/(m2+(m1*(np.sin(x))**2)))-((m1*(v**2)*(np.sin(x))**2)/(2*R*(m2+(m1*(np.sin(x)**2)))))-(((m1+m2)*g*np.sin(x))/(m2+(m1*(np.sin(x))**2))))
+
+def f_2(x,csi,F):
+    return f(x, R*F*csi, F)/((F**2)*R)
+
+n = 1000
+Ft_fin = 2.1
+h = Ft_fin/n
+x0 = 0
+csi0 = 0
+t0 = 0
+F = 6
+def RK4(F):
+    t = t0
+    x = x0
+    csi = csi0
+    T = np.zeros(n)
+    X = np.zeros(n)
+    Y = np.zeros(n)
+    for i in range (n):
+        T[i] = t
+
+        K1 = h*csi
+        M1 = h*f_2(x,csi, F)
+
+        K2 = h*(csi+M1/2)
+        M2 = h*f_2(x+(K1/2), csi+(M1/2), F)
+
+        K3 = h*(csi+(M2/2))
+        M3 = h*f_2(x+(K2/2), csi+(M2/2), F)
+
+        K4 = h*(csi+(M3/2))
+        M4 = h*f_2(x+K3, csi+M3, F)
+
+        x += (K1/6)+(K2/3)+(K3/3)+(K4/6)
+        csi += (M1/6)+(M2/3)+(M3/3)+(M4/6)
+
+        X[i] = x
+        Y[i] = R * F * csi
+
+        t = t+h
+        
+    M = np.array((T, X, Y))
+    return M                  #M è una matrice con 3 righe ed n colonne. La prima riga è quella del tempo, la seconda riga è quella di teta e la terza riga è V (Tutto in funzione di Ft grazie alla trasformazione di coordinate)
+
+
+#Possiamo scrivere d e d'
+J = RK4(6)   #d'
+V2x_6 = np.zeros(n)
+for i in range(n):
+    V2x_6[i] = V2x(J[1, i], J[2, i])
+
+J = RK4(22)  #d
+V2x_22 = np.zeros(n)
+for i in range(n):
+    V2x_22[i] = V2x(J[1, i], J[2, i])
+
+
+#Plottiamo tutte e 6 le Curve
+plt.plot(RK4(6)[0], V2x_6, color="yellow")            #d'
+plt.plot(RK4(6)[0], V2x_22, color="orange")           #d
+
+plt.plot(RK4(6)[0], RK4(6)[2], color="black")         #c'
+plt.plot(RK4(22)[0], RK4(22)[2], color="blue")        #c
+
+plt.plot(Ft, V1x, color="green")                      #a
+plt.plot(Ft, V2, color="red")                         #b
+
+plt.xlabel("Ft")
+plt.ylabel("Velocity")
+plt.xlim(0, 2.5)
+plt.ylim(0, 5)
+plt.show()
