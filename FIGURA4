@@ -1,0 +1,97 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+m1 = 0.1
+m2 = 0.75
+V0 = 20
+R = 0.3
+vf = 2.353
+g = 0
+
+
+Ft = np.linspace(0, 2, 10000)
+def V1x(x):
+    return V0 - x/m1
+V1x = V1x(Ft)
+
+
+def f(x,v,F) :
+    return (((F*np.cos(x))/(m2+(m1*(np.sin(x))**2)))-((m1*(v**2)*(np.sin(x))**2)/(2*R*(m2+(m1*(np.sin(x)**2)))))-(((m1+m2)*g*np.sin(x))/(m2+(m1*(np.sin(x))**2))))
+def f_2(x,csi,F):
+    return f(x, R*F*csi, F)/((F**2)*R)
+
+n = 10000
+Ft_fin = 2
+h = Ft_fin/n
+x0 = 0
+csi0 = 0
+t0 = 0
+def RK4(F):
+    t = t0
+    x = x0
+    csi = csi0
+    T = np.zeros(n)
+    X = np.zeros(n)
+    Y = np.zeros(n)
+    for i in range(n):
+        T[i] = t
+
+        K1 = h*csi
+        M1 = h*f_2(x,csi, F)
+
+        K2 = h*(csi+M1/2)
+        M2 = h*f_2(x+(K1/2), csi+(M1/2), F)
+
+        K3 = h*(csi+(M2/2))
+        M3 = h*f_2(x+(K2/2), csi+(M2/2), F)
+
+        K4 = h*(csi+(M3/2))
+        M4 = h*f_2(x+K3, csi+M3, F)
+
+        x += (K1/6)+(K2/3)+(K3/3)+(K4/6)
+        csi += (M1/6)+(M2/3)+(M3/3)+(M4/6)
+
+        X[i] = x
+        Y[i] = R * F * csi
+
+        t = t+h
+    M = np.array((T, X, Y))
+    return M                  #M è una matrice con 3 righe ed n colonne. La prima riga è quella del tempo, la seconda riga è quella di teta e la terza riga è V (Tutto in funzione di Ft grazie alla trasformazione di coordinate)
+
+FF = np.array((5, 6, 8, 10, 12, 15, 18, 21, 25))
+
+e = 0.00081
+A = V1x[8000:9500]
+B = Ft[8000:9500]
+L = np.array((RK4(5)[0, 8000:9500], RK4(5)[2, 8000:9500], RK4(6)[0, 8000:9500], RK4(6)[2, 8000:9500], RK4(8)[0, 8000:9500], RK4(8)[2, 8000:9500], RK4(10)[0, 8000:9500], RK4(10)[2, 8000:9500], RK4(12)[0, 8000:9500], RK4(12)[2, 8000:9500], RK4(15)[0, 8000:9500], RK4(15)[2, 8000:9500], RK4(18)[0, 8000:9500], RK4(18)[2, 8000:9500], RK4(21)[0, 8000:9500], RK4(21)[2, 8000:9500], RK4(25)[0, 8000:9500], RK4(25)[2, 8000:9500]))
+M = np.array((RK4(5)[0, 8000:9500], RK4(5)[1, 8000:9500], RK4(6)[0, 8000:9500], RK4(6)[1, 8000:9500], RK4(8)[0, 8000:9500], RK4(8)[1, 8000:9500], RK4(10)[0, 8000:9500], RK4(10)[1, 8000:9500], RK4(12)[0, 8000:9500], RK4(12)[1, 8000:9500], RK4(15)[0, 8000:9500], RK4(15)[1, 8000:9500], RK4(18)[0, 8000:9500], RK4(18)[1, 8000:9500], RK4(21)[0, 8000:9500], RK4(21)[1, 8000:9500], RK4(25)[0, 8000:9500], RK4(25)[1, 8000:9500]))
+m = 1500
+VF = np.zeros(9)
+TetaF = np.zeros(9)
+TF = np.zeros(9)
+for l in range(9):
+    v_int = []
+    theta_int = []
+    for k in range(m):
+        for i in range(m):
+            if abs(B[i] - L[2*l, k]) <= e and abs(A[i] - L[2*l+1, k]) <= e:
+                v_int = np.append(v_int, np.array((L[2*l+1, k])))
+                theta_int = np.append(theta_int, np.array((M[2*l+1, k])))
+                TF[l] = B[i]
+                VF[l] = v_int[0]
+                TetaF[l] = theta_int[0]
+
+C = np.ones(9)*2.36
+print(TF)
+plt.plot(FF, TetaF, color="red", marker="o")
+plt.plot(FF, VF, color="black", marker="o")
+plt.plot(FF,C, linestyle=':')
+plt.ylim(0, 2.5)
+plt.xlim(0, 30)
+plt.xlabel("Frictional Force")
+plt.ylabel("Velocity/Angle")
+plt.show()
+plt.plot(FF, TetaF*57.2958, color="red", marker="o")
+plt.xlabel("Frictional Force")
+plt.ylabel("Angle (degrees)")
+plt.show()
