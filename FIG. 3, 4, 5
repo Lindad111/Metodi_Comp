@@ -1,0 +1,266 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+m1 = 0.1
+m2 = 0.75
+V0 = 20
+R = 0.3
+vf = 2.353
+g = 0
+
+#FIGURA3
+#Funzioni Lineari a e b
+n = 10000
+Ft = np.linspace(0, 2.1, n)
+def V1x(x):
+    return V0 - x/m1
+V1x = V1x(Ft)
+def v2(x):
+    return x/m2
+V2 = v2(Ft)
+
+
+#Funzioni d e d'
+def V2x(x, y):
+    return y*np.cos(x)        #Continua dopo perchè mi servono teta e V2 dall'eq. diff
+
+
+#Runge-Kutta per c e c'
+def f(x,v,F) :
+    return (((F*np.cos(x))/(m2+(m1*(np.sin(x))**2)))-((m1*(v**2)*(np.sin(x))**2)/(2*R*(m2+(m1*(np.sin(x)**2)))))-(((m1+m2)*g*np.sin(x))/(m2+(m1*(np.sin(x))**2))))
+
+def f_2(x,csi,F):
+    return f(x, R*F*csi, F)/((F**2)*R)
+
+Ft_fin = 2.1
+h = Ft_fin/n
+x0 = 0
+csi0 = 0
+t0 = 0
+F = 6
+def RK4(F):
+    t = t0
+    x = x0
+    csi = csi0
+    T = np.zeros(n)
+    X = np.zeros(n)
+    Y = np.zeros(n)
+    for i in range (n):
+        T[i] = t
+
+        K1 = h*csi
+        M1 = h*f_2(x,csi, F)
+
+        K2 = h*(csi+M1/2)
+        M2 = h*f_2(x+(K1/2), csi+(M1/2), F)
+
+        K3 = h*(csi+(M2/2))
+        M3 = h*f_2(x+(K2/2), csi+(M2/2), F)
+
+        K4 = h*(csi+(M3/2))
+        M4 = h*f_2(x+K3, csi+M3, F)
+
+        x += (K1/6)+(K2/3)+(K3/3)+(K4/6)
+        csi += (M1/6)+(M2/3)+(M3/3)+(M4/6)
+
+        X[i] = x
+        Y[i] = R * F * csi
+
+        t = t+h
+    M = np.array((T, X, Y))
+    return M                  #M è una matrice con 3 righe ed n colonne. La prima riga è quella del tempo, la seconda riga è quella di teta e la terza riga è V (Tutto in funzione di Ft grazie alla trasformazione di coordinate)
+
+
+#Possiamo scrivere d e d'
+G1 = RK4(6)   #d'
+V2x_6 = np.zeros(n)
+for i in range(n):
+    V2x_6[i] = V2x(G1[1, i], G1[2, i])
+
+G2 = RK4(22)  #d
+V2x_22 = np.zeros(n)
+for i in range(n):
+    V2x_22[i] = V2x(G2[1, i], G2[2, i])
+
+
+#Plottiamo tutte e 6 le Curve
+plt.plot(G1[0], V2x_6, color="yellow")            #d'
+plt.plot(G1[0], V2x_22, color="orange")           #d
+
+plt.plot(G1[0], G1[2], color="black")             #c'
+plt.plot(G2[0], G2[2], color="blue")              #c
+
+plt.plot(Ft, V1x, color="green")                  #a
+plt.plot(Ft, V2, color="red")                     #b
+
+plt.xlabel("Ft")
+plt.ylabel("Velocity")
+plt.xlim(0, 2.5)
+plt.ylim(0, 5)
+plt.show()
+
+
+#FIGURA 4
+p = 7800
+q = 9200
+FF = np.array((5, 6, 7, 8, 10, 12, 15, 18, 21, 25))
+
+e = 0.0009
+
+V_T = V1x[p:q]
+F_T = Ft[p:q]
+
+l1 = RK4(5)[:, p: q]
+l2 = RK4(6)[:, p: q]
+l3 = RK4(7)[:, p: q]
+l4 = RK4(8)[:, p: q]
+l5 = RK4(10)[:, p: q]
+l6 = RK4(12)[:, p: q]
+l7 = RK4(15)[:, p: q]
+l8 = RK4(18)[:, p: q]
+l9 = RK4(21)[:, p: q]
+l10 = RK4(25)[:, p: q]
+UpperCurve = np.array((l1[0], l1[2], l2[0], l2[2], l3[0], l3[2], l4[0], l4[2], l5[0], l5[2], l6[0], l6[2], l7[0], l7[2], l8[0], l8[2], l9[0], l9[2], l10[0], l10[2]))
+DownerCurve = np.array((l1[0], l1[1], l2[0], l2[1], l3[0], l3[1], l4[0], l4[1], l5[0], l5[1], l6[0], l6[1], l7[0], l7[1], l8[0], l8[1], l9[0], l9[1], l10[0], l10[1]))
+
+m = q - p
+TF = np.zeros(len(FF))
+VF = np.zeros(len(FF))
+TetaF = np.zeros(len(FF))
+for l in range(len(FF)):
+    v_int = []
+    theta_int = []
+    for k in range(m):
+        for i in range(m):
+            if abs(F_T[i] - UpperCurve[2*l, k]) <= e and abs(V_T[i] - UpperCurve[2*l+1, k]) <= e:
+                v_int = np.append(v_int, np.array((UpperCurve[2*l+1, k])))
+                theta_int = np.append(theta_int, np.array((DownerCurve[2*l+1, i])))
+                TF[l] = F_T[i]
+                VF[l] = v_int[0]
+                TetaF[l] = theta_int[0]
+
+C = np.ones(len(FF))*2.355
+plt.plot(FF, VF, color="black", marker="o")
+plt.plot(FF, C, linestyle=':')
+plt.ylim(0, 2.5)
+plt.xlim(0, 30)
+plt.xlabel("Frictional Force")
+plt.ylabel("Velocity")
+plt.show()
+
+grad = 57.2958
+plt.plot(FF, TetaF*grad, color="red", marker="o")
+plt.xlabel("Frictional Force")
+plt.ylabel("Angle (degrees)")
+plt.ylim(0, 90)
+plt.xlim(0, 30)
+plt.show()
+
+tempi = np.zeros(len(FF))
+for i in range(len(FF)):
+    tempi[i] = TF[i]/FF[i]
+
+
+#FIGURA5
+g1 = 9.81
+def f(theta, v, F):
+    return (((F*np.cos(theta))/(m2+(m1*(np.sin(theta))**2))) - ((m1*(v**2)*(np.sin(theta))**2)/(2*R*(m2+(m1*(np.sin(theta)**2))))) - (((m1 + m2) * g1 * np.sin(theta)) / (m2 + (m1 * (np.sin(theta)) ** 2))))
+
+
+def f_3(theta, eta, F):
+    return f(theta, R * eta, F) / R
+
+
+tfin = 0.3
+h = tfin / n
+theta0 = 0
+eta0 = 0
+t0 = 0
+def RK4bis(F):
+    t = t0
+    theta = theta0
+    eta = eta0
+    T = np.zeros(n)
+    X = np.zeros(n)
+    Y = np.zeros(n)
+    for i in range(n):
+        T[i] = t
+
+        K1 = h * eta
+        M1 = h * f_3(theta, eta, F)
+
+        K2 = h * (eta + M1 / 2)
+        M2 = h * f_3(theta + (K1 / 2), eta + (M1 / 2), F)
+
+        K3 = h * (eta + (M2 / 2))
+        M3 = h * f_3(theta + (K2 / 2), eta + (M2 / 2), F)
+
+        K4 = h * (eta + (M3 / 2))
+        M4 = h * f_3(theta + K3, eta + M3, F)
+
+        theta += (K1 / 6) + (K2 / 3) + (K3 / 3) + (K4 / 6)
+        eta += (M1 / 6) + (M2 / 3) + (M3 / 3) + (M4 / 6)
+
+        X[i] = theta
+        Y[i] = eta * R
+
+        t = t + h
+
+    MRK = np.array((T, X, Y))
+    return MRK
+
+G25_1 = RK4bis(25)
+G6_1 = RK4bis(6)
+
+
+def seno(alpha):
+    return (-(g1/R)*np.sin(alpha))
+
+def alpha(tempo0, alpha0, v0):
+    alpha = alpha0
+    omega = v0/R
+    tempo = tempo0
+    TT = np.zeros(n)
+    AL = np.zeros(n)
+    OM = np.zeros(n)
+    for i in range(n):
+        TT[i] = tempo
+
+        K1 = h * omega
+        M1 = h * seno(alpha)
+
+        K2 = h * (omega + M1 / 2)
+        M2 = h * seno(alpha + (K1 / 2))
+
+        K3 = h * (omega + M2 / 2)
+        M3 = h * seno(alpha + (K2 / 2))
+
+        K4 = h * (omega + M3 / 2)
+        M4 = h * seno(alpha + K3)
+
+        alpha += (K1/6) + (K2/3) + (K3/3) + (K4/6)
+        omega += (M1/6) + (M2/3) + (M3/3) + (M4/6)
+
+        AL[i] = alpha
+        OM[i] = omega
+
+        tempo = tempo + h
+
+    MALPHA = np.array((TT, AL, OM))
+    return MALPHA
+
+G3 = alpha(0, 0, V0*m1/(m2+m1))
+
+G25_2 = alpha(tempi[9], G25_1[1, 2356], G25_1[2, 2356])          #i valori 2356 e 9994 sono i valori della posizione di tc nell'array rispettivamente per F=25 e F=6
+G6_2 = alpha(tempi[1], G6_1[1, 9994], G6_1[2, 9994])
+
+plt.plot(G3[0], G3[1]*grad)
+
+plt.plot(G6_1[0, :9994], G6_1[1, :9994]*grad, color="black")
+plt.plot(G6_2[0], G6_2[1]*grad, linestyle=":")
+
+plt.plot(G25_1[0, :2356], G25_1[1, :2356]*grad, color="black")
+plt.plot(G25_2[0], G25_2[1]*grad, linestyle=":")
+plt.xlim(0, 0.5)
+plt.ylim(0, 100)
+plt.show()
