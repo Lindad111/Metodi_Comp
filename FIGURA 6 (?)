@@ -1,0 +1,130 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+m1 = 0.1
+m2 = 0.75
+V0 = 20
+R = 0.3
+vf = 2.353
+n = 1000
+
+FF = np.array((6, 7, 8, 10, 12, 15, 18, 21, 25))
+
+e = 0.005
+
+Tempo = np.linspace(0, 0.5, n)
+def V1x(t, F):
+    return V0 - F*t/m1
+
+g1 = 9.81
+def f(theta, v, F):
+    return (((F*np.cos(theta))/(m2+(m1*(np.sin(theta))**2))) - ((m1*(v**2)*(np.sin(theta))**2)/(2*R*(m2+(m1*(np.sin(theta)**2))))) - (((m1 + m2) * g1 * np.sin(theta)) / (m2 + (m1 * (np.sin(theta)) ** 2))))
+
+def f_3(theta, eta, F):
+    return f(theta, R * eta, F) / R
+
+tfin = 0.5
+h = tfin / n
+theta0 = 0
+eta0 = 0
+t0 = 0
+def RK4bis(F):
+    t = t0
+    theta = theta0
+    eta = eta0
+    T = np.zeros(n)
+    X = np.zeros(n)
+    Y = np.zeros(n)
+    for i in range(n):
+        T[i] = t
+
+        K1 = h * eta
+        M1 = h * f_3(theta, eta, F)
+
+        K2 = h * (eta + M1 / 2)
+        M2 = h * f_3(theta + (K1 / 2), eta + (M1 / 2), F)
+
+        K3 = h * (eta + (M2 / 2))
+        M3 = h * f_3(theta + (K2 / 2), eta + (M2 / 2), F)
+
+        K4 = h * (eta + (M3 / 2))
+        M4 = h * f_3(theta + K3, eta + M3, F)
+
+        theta += (K1 / 6) + (K2 / 3) + (K3 / 3) + (K4 / 6)
+        eta += (M1 / 6) + (M2 / 3) + (M3 / 3) + (M4 / 6)
+
+        X[i] = theta
+        Y[i] = eta * R
+
+        t = t + h
+
+    MRK = np.array((T, X, Y))
+    return MRK
+
+#V1x_5 = V1x(Tempo, 5)
+V1x_6 = V1x(Tempo, 6)
+V1x_7 = V1x(Tempo, 7)
+V1x_8 = V1x(Tempo, 8)
+V1x_10 = V1x(Tempo, 10)
+V1x_12 = V1x(Tempo, 12)
+V1x_15 = V1x(Tempo, 15)
+V1x_18 = V1x(Tempo, 18)
+V1x_21 = V1x(Tempo, 21)
+V1x_25 = V1x(Tempo, 25)
+
+#A_5 = RK4bis(5)
+A_6 = RK4bis(6)
+A_7 = RK4bis(7)
+A_8 = RK4bis(8)
+A_10 = RK4bis(10)
+A_12 = RK4bis(12)
+A_15 = RK4bis(15)
+A_18 = RK4bis(18)
+A_21 = RK4bis(21)
+A_25 = RK4bis(25)
+
+VV = np.array((V1x_6, V1x_7, V1x_8, V1x_10, V1x_12, V1x_15, V1x_18, V1x_21, V1x_25))
+AA = np.array((A_6[0], A_6[2], A_7[0], A_7[2], A_8[0], A_8[2], A_10[0], A_10[2], A_12[0], A_12[2], A_15[0], A_15[2], A_18[0], A_18[2], A_21[0], A_21[2], A_25[0], A_25[2]))
+
+
+indTmA = np.zeros(len(FF))
+TdiMaxAmpiezza = np.zeros(len(FF))
+
+ind = np.zeros(len(FF))
+TF = np.zeros(len(FF))
+VF = np.zeros(len(FF))
+for l in range(len(FF)):
+    tdimaxAmp = []
+    v_int = []
+    theta_int = []
+    for k in range(n):
+        for i in range(n):
+            if abs(Tempo[i] - AA[2*l, k]) <= e and abs(VV[l, i] - AA[2*l+1, k]) <= e:
+                v_int = np.append(v_int, np.array((AA[2*l+1, k])))
+                TF[l] = Tempo[i]
+                ind[l] = i
+                VF[l] = v_int[0]
+            if abs(AA[2*l+1, i]) <= e:
+                tdimaxAmp = np.append(tdimaxAmp, np.array((AA[2*l+1, k])))
+                TdiMaxAmpiezza[l] = tdimaxAmp[0]
+                indTmA[l] = i
+
+i = np.array(ind, dtype=int)
+j = np.array(indTmA, dtype=int)
+
+print(TF)
+print(i)
+
+print(TdiMaxAmpiezza)
+print(j)
+g = 57.2958
+
+ang = np.array((A_6[1, i[0]], A_7[1, i[1]], A_8[1, i[2]], A_10[1, i[3]], A_12[1, i[4]], A_15[1, i[5]], A_18[1, i[6]], A_21[1, i[7]], A_25[1, i[8]]))
+max_A = np.array((A_6[1, j[0]], A_7[1, j[1]], A_8[1, j[2]], A_10[1, j[3]], A_12[1, j[4]], A_15[1, j[5]], A_18[1, j[6]], A_21[1, j[7]], A_25[1, j[8]]))
+
+plt.plot(FF, max_A*g, marker="o")
+plt.plot(FF, ang*g, marker="o")
+plt.xlim(5, 26)
+plt.ylim(10, 100)
+plt.show()
+
