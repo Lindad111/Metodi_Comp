@@ -1,0 +1,165 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+m1 = 0.1
+m2 = 0.75
+V0 = 20
+R = 0.3
+vf = 2.353
+g = 0
+n = 1000
+grad = 57.2958
+
+# Funzioni Lineari a e b
+Ft = np.linspace(0, 2.1, 1000)
+def V1x(x):
+    return V0 - x / m1
+V1X = V1x(Ft)
+def v2(x):
+    return x / m2
+V2 = v2(Ft)
+
+
+# Funzioni d e d'
+def V2x(x, y):
+    return y * np.cos(x)                                                 # Continua dopo perchè mi servono teta e V2 dall'eq. diff
+
+# Runge-Kutta per c e c'
+def f(x, v, F):
+    return (((F * np.cos(x)) / (m2 + (m1 * (np.sin(x)) ** 2))) - ((m1 * (v ** 2) * (np.sin(x)) ** 2)/(2 * R * (m2 + (m1 * (np.sin(x) ** 2))))) - (((m1 + m2) * g * np.sin(x))/(m2 + (m1 * (np.sin(x)) ** 2))))
+
+def f_2(x, csi, F):
+    return f(x, R * F * csi, F) / ((F ** 2) * R)
+
+def f_3(x, csi, F):
+    return f(x, R * csi, F) / R
+
+x0 = 0
+csi0 = 0
+t0 = 0
+def RK4(F, func, fine):
+    h = fine / n
+    t = t0
+    x = x0
+    csi = csi0
+    T = np.zeros(n)
+    X = np.zeros(n)
+    V = np.zeros(n)
+    for i in range(n):
+        T[i] = t
+        X[i] = x
+        if func == f_2:
+            V[i] = R * F * csi
+        elif func == f_3:
+            V[i] = R * csi
+
+        K1 = h * csi
+        M1 = h * func(x, csi, F)
+
+        K2 = h * (csi + M1/2)
+        M2 = h * func(x + (K1/2), csi+(M1/2), F)
+
+        K3 = h * (csi + (M2/2))
+        M3 = h * func(x + (K2/2), csi + (M2/2), F)
+
+        K4 = h * (csi + (M3/2))
+        M4 = h * func(x + K3, csi + M3, F)
+
+        x += (K1/6) + (K2/3) + (K3/ 3) + (K4/6)
+        csi += (M1/6) + (M2/3) + (M3/3) + (M4/6)
+        t = t + h
+
+    M = np.array((T, X, V))
+    return M                              # M è una matrice con 3 righe ed n colonne. La prima riga è quella del tempo, la seconda riga è quella di teta e la terza riga è V (Tutto in funzione di Ft grazie alla trasformazione di coordinate)
+
+
+# Possiamo scrivere d e d'
+G6 = RK4(6, f_2, 2.1)                            # d'
+V2x_6 = V2x(G6[1], G6[2])
+
+G22 = RK4(22, f_2, 2.1)                           # d
+V2x_22 = V2x(G22[1], G22[2])
+
+#Plottiamo tutte e 6 le Curve
+plt.plot(G6[0], V2x_6, color="yellow")         # d'
+plt.plot(G22[0], V2x_22, color="orange")        # d
+
+plt.plot(G6[0], G6[2], color="black")          # c'
+plt.plot(G22[0], G22[2], color="blue")           # c
+
+plt.plot(Ft, V1X, color="green")               # a
+plt.plot(Ft, V2, color="red")                  # b
+
+plt.xlabel("Ft")
+plt.ylabel("Velocity")
+plt.xlim(0, 2.5)
+plt.ylim(0, 5)
+plt.show()
+
+
+
+#FIGURA 4
+FF = np.array((6, 7, 8, 10, 12, 15, 18, 21, 25))
+
+G7 = RK4(7, f_2, 2.1)
+V2x_7 = V2x(G7[1], G7[2])
+
+G8 = RK4(8, f_2, 2.1)
+V2x_8 = V2x(G8[1], G8[2])
+
+G10 = RK4(10, f_2, 2.1)
+V2x_10 = V2x(G10[1], G10[2])
+
+G12 = RK4(12, f_2, 2.1)
+V2x_12 = V2x(G12[1], G12[2])
+
+G15 = RK4(15, f_2, 2.1)
+V2x_15 = V2x(G15[1], G15[2])
+
+G18 = RK4(18, f_2, 2.1)
+V2x_18 = V2x(G18[1], G18[2])
+
+G21 = RK4(21, f_2, 2.1)
+V2x_21 = V2x(G21[1], G21[2])
+
+G25 = RK4(25, f_2, 2.1)
+V2x_25 = V2x(G25[1], G25[2])
+
+TG = np.array((G6[0], G7[0], G8[0], G10[0], G12[0], G15[0], G18[0], G21[0], G25[0]))
+AG = np.array((G6[1], G7[1], G8[1], G10[1], G12[1], G15[1], G18[1], G21[1], G25[1]))
+VG = np.array((G6[2], G7[2], G8[2], G10[2], G12[2], G15[2], G18[2], G21[2], G25[2]))
+V = np.array((V2x_6, V2x_7, V2x_8, V2x_10, V2x_12, V2x_15, V2x_18, V2x_21, V2x_25))
+
+def Inter(A, B, C, D):
+    e = 0.005
+    ind = []
+    for i in range(n):
+        for j in range(n):
+            if abs(A[i] - B[j]) <= e and abs(C[i] - D[j]) <= e:
+                ind.append(i)
+    return ind[0]
+
+indici = np.zeros(len(FF))
+for l in range(len(FF)):
+    indici[l] = Inter(Ft, TG[l], V1X, V[l])
+indici = np.array(indici, dtype = int)
+
+Vfinali = np.zeros(len(FF))
+for i in range(len(FF)):
+    Vfinali[i] = VG[i, indici[i]]
+
+Afinali = np.zeros(len(FF))
+for i in range(len(FF)):
+    Afinali[i] = AG[i, indici[i]]
+
+A = np.ones(len(FF))
+plt.plot(FF, A*2.365, linestyle=":")
+plt.plot(FF, Vfinali, marker="o")
+plt.ylim(0, 2.5)
+plt.xlim(0, 30)
+plt.show()
+
+plt.plot(FF, Afinali*grad, marker="o")
+plt.ylim(0, 90)
+plt.xlim(0, 30)
+plt.show()
