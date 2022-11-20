@@ -1,0 +1,33 @@
+Tfinali = np.zeros(len(FF))
+for i in range (len(FF)):
+    Tfinali[i] = TG[i, indici[i]]
+    
+    TC=np.zeros(len(FF))
+
+for i in range (len(FF)):
+    TC[i] = Tfinali[i]/FF[i]
+print(TC)
+
+#devo definire i displacements orizzontali 
+dx1 = np.zeros(len(FF))
+dx2 = np.zeros(len(FF))
+for j in range (len(FF)):
+    dx2[j] = R*np.sin(Afinali[j])
+    dx1[j] = (V0*TC[j]-(1/2)*(FF[j]/m1)*((TC[j])**2))
+print("proiettile=" , dx1)
+print("pendolo=" , dx2)
+
+delta_E=[]
+Lavoro=[]
+
+for d in range(len(FF)):
+    de_en = (1/2)*((m1+m2)*(Vfinali[d])**2-m1*(V0)**2) 
+    work = -(FF[d])*(dx1[d]-dx2[d])                                                 #è un lavoro resistente
+    delta_E = np.append(delta_E, de_en)
+    Lavoro = np.append(Lavoro, work)
+    
+print(delta_E)
+print(Lavoro)
+    
+    
+
